@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <Halide.h>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -28,9 +29,9 @@ template <class T>
 class IsStreamable {
  private:
   template <class TT>
-  static auto test(int)
-      -> decltype(std::declval<std::stringstream&>() << std::declval<TT>(),
-                  std::true_type());
+  static auto test(int) -> decltype(std::declval<std::stringstream&>()
+                                        << std::declval<TT>(),
+                                    std::true_type());
 
   template <class>
   static auto test(...) -> std::false_type;
@@ -137,11 +138,13 @@ void ensureFailed(char const* function, char const* file, int line,
     }                                                                          \
   } while (false)
 #else
-#define SOPHUS_ENSURE(expr, description, ...)           \
-  do {                                                  \
-    if (!(expr)) {                                      \
-      SOPHUS_ENSURE_FAILED(description, ##__VA_ARGS__); \
-    }                                                   \
+#define SOPHUS_ENSURE(expr, description, ...)                      \
+  do {                                                             \
+    if constexpr (!std::is_same_v<decltype(expr), Halide::Expr>) { \
+      if (!(expr)) {                                               \
+        SOPHUS_ENSURE_FAILED(description, ##__VA_ARGS__);          \
+      }                                                            \
+    }                                                              \
   } while (false)
 #endif
 
